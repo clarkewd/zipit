@@ -1,4 +1,4 @@
-<?php 
+<?php
 ###############################################################
 # Zipit Backup Utility
 ###############################################################
@@ -13,7 +13,7 @@
     date_default_timezone_set('America/Chicago');
 
 // Set timestamp
-   $timestamp =  date("M-d-Y_H-i-s"); 
+   $timestamp =  date("M-d-Y_H-i-s");
 
 // require zipit configuration
     require('zipit-config.php');
@@ -81,7 +81,7 @@ fclose($fp);
    $stringData = "$logtimestamp -- Connection to Cloud Files successful.\n";
    fwrite($fh, $stringData);
    fclose($fh);
-    
+
 }
 catch (HttpUnauthorizedError $e) {
 $fp = fopen("./zipit-api-check-files.php", "w");
@@ -132,6 +132,15 @@ $obj->Create(array('name' => "$url-$timestamp.zip", 'content_type' => 'applicati
     $md5file = "./zipit-backups/files/backup.zip";
     $md5 = md5_file($md5file);
 
+
+// also send to dropbox
+if(function_exists('send_to_dropbox'))
+{
+	send_to_dropbox(dirname(__FILE__).'/zipit-backups/files/backup.zip', "zipit-backups-files-$url.zip");
+}
+
+
+
 // compare md5 with etag
     if ($md5 == $etag) {
 
@@ -148,7 +157,7 @@ fclose($fp);
    $stringData = "$logtimestamp -- Cleaned up local backups.\n";
    fwrite($fh, $stringData);
    fclose($fh);
-   
+
 }
 
 else {

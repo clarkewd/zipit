@@ -1,4 +1,4 @@
-<?php 
+<?php
 ###############################################################
 # Zipit Backup Utility
 ###############################################################
@@ -15,7 +15,7 @@ ini_set('max_execution_time', 3600);
     date_default_timezone_set('America/Chicago');
 
 // include password protection
-    include("zipit-login.php"); 
+    include("zipit-login.php");
 
 // require zipit configuration
     require('zipit-config.php');
@@ -87,7 +87,7 @@ $mysecret = array(
 $connection = new Rackspace(AUTHURL, $mysecret);
 // now, connect to the ObjectStore service
 $ostore = $connection->ObjectStore('cloudFiles', "$datacenter");
-    
+
 // write to log
    $logtimestamp =  date("M-d-Y_H-i-s");
    $fh = fopen($zipitlog, 'a') or die("can't open file");
@@ -98,7 +98,7 @@ $ostore = $connection->ObjectStore('cloudFiles', "$datacenter");
 catch (HttpUnauthorizedError $e) {
    echo '<script type="text/javascript">';
    echo 'alert("Cloud Files API connection could not be established.\n\nBe sure to check your API credentials.")';
-   echo '</script>'; 
+   echo '</script>';
 
 // write to log
    $logtimestamp =  date("M-d-Y_H-i-s");
@@ -257,33 +257,33 @@ echo '<center>';
     $p->render();
 
 // check database size
-function file_size_info($filesize) { 
- $bytes = array('KB', 'KB', 'MB', 'GB', 'TB'); # values are always displayed  
- if ($filesize < 1024) $filesize = 1; # in at least kilobytes. 
- for ($i = 0; $filesize > 1024; $i++) $filesize /= 1024; 
- $file_size_info['size'] = ceil($filesize); 
- $file_size_info['type'] = $bytes[$i]; 
- return $file_size_info; 
-} 
+function file_size_info($filesize) {
+ $bytes = array('KB', 'KB', 'MB', 'GB', 'TB'); # values are always displayed
+ if ($filesize < 1024) $filesize = 1; # in at least kilobytes.
+ for ($i = 0; $filesize > 1024; $i++) $filesize /= 1024;
+ $file_size_info['size'] = ceil($filesize);
+ $file_size_info['type'] = $bytes[$i];
+ return $file_size_info;
+}
 
-$db_link = @mysql_connect($db_host, $db_user, $db_pass) 
- or exit('Could not connect: ' . mysql_error()); 
-$db = @mysql_select_db($db_name, $db_link) 
+$db_link = @mysql_connect($db_host, $db_user, $db_pass)
+ or exit('Could not connect: ' . mysql_error());
+$db = @mysql_select_db($db_name, $db_link)
 
- or exit('Could not select database: ' . mysql_error()); 
-// Calculate DB size by adding table size + index size: 
-$rows = mysql_query("SHOW TABLE STATUS"); 
-$dbSize = 0; 
-while ($row = mysql_fetch_array($rows)) { 
- $dbSize += $row['Data_length'] + $row['Index_length']; 
-} 
+ or exit('Could not select database: ' . mysql_error());
+// Calculate DB size by adding table size + index size:
+$rows = mysql_query("SHOW TABLE STATUS");
+$dbSize = 0;
+while ($row = mysql_fetch_array($rows)) {
+ $dbSize += $row['Data_length'] + $row['Index_length'];
+}
 
 if ($dbSize > 4831838208) {
 
 // alert Cloud Files object size exceeded
    echo '<script type="text/javascript">';
    echo 'alert("Backup Failed!\n\nCloud Files max object size of 5GB exceeded.\n\nPlease reduce the size of your database and try again.")';
-   echo '</script>';  
+   echo '</script>';
 
 // write to log
    $logtimestamp =  date("M-d-Y_H-i-s");
@@ -297,9 +297,9 @@ if ($dbSize > 4831838208) {
 
 // set timestamp format
     $timestamp =  date("M-d-Y_H-i-s");
- 
+
 // write to log
-    $logtimestamp =  date("M-d-Y_H-i-s"); 
+    $logtimestamp =  date("M-d-Y_H-i-s");
     $fh = fopen($zipitlog, 'a') or die("can't open file");
     $stringData = "$logtimestamp -- Zipit creation for $db_name-$timestamp.zip\n";
     fwrite($fh, $stringData);
@@ -328,7 +328,7 @@ for ($i = 0; $i < ($size = 100); $i++) {
 // create container if it doesn't already exist
 $cont = $ostore->Container();
 $cont->Create(array('name'=>"zipit-backups-databases-$url"));
-    
+
 // write to log
    $logtimestamp =  date("M-d-Y_H-i-s");
    $fh = fopen($zipitlog, 'a') or die("can't open file");
@@ -346,7 +346,7 @@ $obj->Create(array('name' => "$db_name-$timestamp.zip", 'content_type' => 'appli
     pclose($pipe);
 
 // get etag(md5)
-    $etag = $obj->hash; 
+    $etag = $obj->hash;
 
 // generate md5 hash
     $md5file = "./web/content/zipit/zipit-backups/databases/$db_name-$timestamp.zip";
@@ -355,9 +355,21 @@ $obj->Create(array('name' => "$db_name-$timestamp.zip", 'content_type' => 'appli
 // compare md5 with etag
 if ($md5 == $etag) {
 
+
+
+// also send to dropbox
+if(function_exists('send_to_dropbox'))
+{
+	send_to_dropbox(dirname(__FILE__)."/zipit-backups/databases/$db_name-$timestamp.zip","zipit-backups-database-$db_name.zip");
+}
+
+
+
+
+
 // clean up local backups
     shell_exec('rm -rf ./web/content/zipit/zipit-backups/databases/*');
-    
+
 // write to log
    $logtimestamp =  date("M-d-Y_H-i-s");
    $fh = fopen($zipitlog, 'a') or die("can't open file");
@@ -370,14 +382,14 @@ else {
 
 // remove file from Cloud Files
    $obj->Delete(array('name'=>"$db_name-$timestamp.zip"));
-   
+
 // remove local file
     shell_exec("rm -rf ./web/content/zipit/zipit-backups/databases/*");
 
 // alert MD5 mismatch
     echo '<script type="text/javascript">';
     echo 'alert("Backup Failed!\n\nFile integrety check failure.\n\nPlease try again.")';
-    echo '</script>';  
+    echo '</script>';
     echo "<script>location.href='zipit-db.php'</script>";
 
 // write to log
@@ -392,7 +404,7 @@ else {
 
 echo "<center><input readonly style='border: 1px solid #818185; background-color:#ccc; -moz-border-radius: 15px; border-radius: 15px; text-align:center; width:300px; color:#000; padding:3px;' type='submit' value='Backup Complete -- Click To Continue' onclick='location = \"zipit-db.php\";'/></center>";
 
-// write to log 
+// write to log
    $logtimestamp =  date("M-d-Y_H-i-s");
    $fh = fopen($zipitlog, 'a') or die("can't open file");
    $stringData = "$logtimestamp -- Zipit Completed Successfully for $db_name-$timestamp.zip\n$logtimestamp Zipit completed\n\n";

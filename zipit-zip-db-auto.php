@@ -250,6 +250,16 @@ $obj->Create(array('name' => "$db_name-$timestamp.zip", 'content_type' => 'appli
 // compare md5 with etag
 if ($md5 == $etag) {
 
+
+	// also send to dropbox
+	if(function_exists('send_to_dropbox'))
+	{
+		send_to_dropbox(dirname(__FILE__)."/zipit-backups/databases/$db_name-$timestamp.zip","zipit-backups-database-$db_name.zip");
+	}
+
+
+
+
 // clean up local backups
     shell_exec('rm -rf ./web/content/zipit/zipit-backups/databases/*');
 
